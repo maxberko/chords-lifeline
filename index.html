@@ -49,6 +49,9 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .opt:hover .disc{stroke-width:2.8;fill:color-mix(in srgb,var(--c) 18%,var(--stage))}
 .opt .lbl{fill:var(--c);font-family:var(--sans);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .opt .ext{fill:var(--white);font-family:var(--serif);font-style:italic;text-anchor:start;dominant-baseline:central;pointer-events:none;opacity:.9}
+.opt .dtag-bg{fill:var(--stage);stroke-width:1.2;stroke:var(--ink-3)} .opt .dtag{fill:var(--ink-2);font-family:var(--mono);font-weight:500;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.opt.d0 .dtag-bg{stroke:#8fd3a3} .opt.d0 .dtag{fill:#8fd3a3} .opt.d1 .dtag-bg{stroke:var(--amber)} .opt.d1 .dtag{fill:var(--amber)} .opt.d3 .dtag{fill:var(--ink-3)}
+.spoke.d2{stroke-dasharray:6 4} .spoke.d3{stroke-dasharray:2 5}
 .opt .num{fill:var(--ink-2);font-family:var(--mono);text-anchor:middle;dominant-baseline:hanging;pointer-events:none;letter-spacing:.03em}
 .opt.strong .disc{stroke-width:2.4;fill:color-mix(in srgb,var(--c) 14%,var(--stage))}
 .center .disc{fill:var(--stage);stroke-width:2.5}
@@ -80,6 +83,8 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 #optList .n{font:400 22px/1 var(--serif)} #optList .n.major{color:var(--major)} #optList .n.minor{color:var(--minor)}
 #optList .n .ext{font-size:.55em;font-style:italic;margin-left:1px}
 #optList .r{font-size:13px;color:var(--ink-2)} #optList .r b{font:400 11px var(--mono);color:var(--amber);letter-spacing:.04em;margin-right:6px}
+#optList .dist{display:block;font:400 11px var(--mono);letter-spacing:.02em;margin-top:2px}
+.d0{color:#8fd3a3} .d1{color:var(--amber)} .d2{color:var(--ink-2)} .d3{color:var(--ink-3)}
 #optList li.empty{display:block;color:var(--ink-3);font-size:13px;padding:6px;cursor:default}
 #optList li.empty::after{display:none}
 .controls{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
@@ -123,7 +128,7 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
       <g id="opts"></g>
       <g id="center"></g>
     </svg>
-    <div class="hint" id="hint">Play a chord, or click one on the map. Closer to the centre = more likely next.</div>
+    <div class="hint" id="hint">Closer to the centre = more likely next. The small number is how many semitones the voices move to get there: green is smooth, amber close, dashed spokes are far.</div>
   </div>
 
   <aside class="panel">
@@ -275,6 +280,19 @@ function inferKey(hist){
 }
 
 /* ---------- next-chord ranking ---------- */
+/* ---------- proximity: how far the voices move to reach the next chord ---------- */
+const pcDist=(a,b)=>{const d=Math.abs(a-b)%12; return Math.min(d,12-d);};
+function tonesOf(pc,minor,ext){ const t=[pc,(pc+(minor?3:4))%12,(pc+7)%12]; if(ext==='maj7') t.push((pc+11)%12); else if(ext==='7'||ext==='m7'||ext==='ø7') t.push((pc+10)%12); if(ext==='ø7') t[2]=(pc+6)%12; return t; }
+function permutations(a){ if(a.length<=1) return [a]; const out=[]; a.forEach((x,i)=>permutations(a.filter((_,j)=>j!==i)).forEach(p=>out.push([x,...p]))); return out; }
+function distance(from,to){ // from/to: {pc,minor,ext}
+  let A=tonesOf(from.pc,from.minor,from.ext), B=tonesOf(to.pc,to.minor,to.ext);
+  if(A.length!==B.length){ A=A.slice(0,3); B=B.slice(0,3); } // compare like with like: triads when only one side has a 7th
+  let vl=99; for(const p of permutations(B)){ let s=0; for(let i=0;i<A.length;i++) s+=pcDist(A[i],p[i]); if(s<vl) vl=s; }
+  const common=A.filter(x=>B.includes(x)).length;
+  const iv=((to.pc-from.pc)%12+12)%12, p5=(iv*7)%12, fifths=Math.min(p5,12-p5);
+  const cls=vl<=2?0:vl<=4?1:vl<=6?2:3, word=['smooth','close','moderate','far'][cls];
+  return {vl,common,fifths,cls,word};
+}
 function candidates(cur,key){
   const tonic=tonicOf(key), major=key.mode==='major';
   const roles=major?MAJOR_ROLES:MINOR_ROLES, T=tableFor(major), mode=key.mode;
@@ -313,7 +331,8 @@ function candidates(cur,key){
       }
     }
     if(curRole&&curRole.kind==='s'&&r.kind!=='d') score*=.5;
-    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext:roleExt(r,mode),why,name});
+    const ext=roleExt(r,mode);
+    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext,why,name,dist:distance(cur,{pc,minor:r.minor,ext})});
   }
   return out.sort((a,b)=>b.score-a.score);
 }
@@ -402,10 +421,11 @@ function renderMap(){
     if(!n){
       const g=el('g',{class:'opt',tabindex:'0',role:'button'});
       const line=el('line',{class:'spoke',x1:CX,y1:CY,x2:tx,y2:ty}); gSpokes.appendChild(line);
-      g.appendChild(el('circle',{class:'disc',r:tr})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'}));
+      g.appendChild(el('circle',{class:'disc',r:tr})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'})); g.appendChild(el('circle',{class:'dtag-bg',r:0})); g.appendChild(el('text',{class:'dtag'}));
       gOpts.appendChild(g);
       n={key:k,el:g,line,x:tx,y:ty,r:tr,op:0,tx,ty,tr,tOp:1};
       g.setAttribute('transform',`translate(${tx.toFixed(1)},${ty.toFixed(1)})`); g.style.opacity='0';
+      { const tb=g.querySelector('.dtag-bg'), tt=g.querySelector('.dtag'), r0=Math.max(7,tr*.36); tb.setAttribute('r',r0.toFixed(1)); tb.setAttribute('cx',(-tr*.8).toFixed(1)); tb.setAttribute('cy',(-tr*.8).toFixed(1)); tt.setAttribute('x',(-tr*.8).toFixed(1)); tt.setAttribute('y',(-tr*.8).toFixed(1)); tt.setAttribute('font-size',(r0*1.25).toFixed(1)); }
       const go=()=>{ playChord({pc:c.pc,minor:c.minor,ext:n.ext},'clicked'); };
       g.addEventListener('click',go); g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
       nodes.set(k,n);
@@ -416,12 +436,13 @@ function renderMap(){
     n.el.querySelector('.lbl').textContent=pretty(c.name);
     n.el.querySelector('.ext').textContent=c.ext==='ø7'?'ø7':badge(c.ext);
     n.el.querySelector('.num').textContent=c.num;
+    n.el.querySelector('.dtag').textContent=c.dist.vl; n.el.classList.add('d'+c.dist.cls); n.line.setAttribute('class','spoke d'+c.dist.cls);
     n.lineOp=.15+c.score*.7;
   });
   for(const [k,n] of nodes){ if(!seen.has(k)) n.tOp=0; }
   startAnim();
   // panel list
-  optList.innerHTML=cands.slice(0,9).map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}</span></li>`).join('');
+  optList.innerHTML=cands.slice(0,9).map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}<em class="dist d${c.dist.cls}" title="minimal voice-leading distance · common tones · circle-of-fifths steps">${c.dist.vl} st · ${c.dist.common} common · ${c.dist.fifths}♯♭</em></span></li>`).join('');
   optList.querySelectorAll('li').forEach(li=>li.addEventListener('click',()=>{ const [pc,mi,ext]=li.dataset.k.split('|'); playChord({pc:+pc,minor:mi==='1',ext},'clicked'); }));
 }
 function startAnim(){ if(animReq) return; let last=performance.now(); const step=now=>{ const dt=Math.min(100,now-last); last=now; const f=1-Math.exp(-dt/110); let busy=false;
@@ -433,6 +454,7 @@ function startAnim(){ if(animReq) return; let last=performance.now(); const step
     n.el.querySelector('.lbl').setAttribute('font-size',(n.r*.62+4).toFixed(1));
     const ex=n.el.querySelector('.ext'); ex.setAttribute('x',(n.r*.75).toFixed(1)); ex.setAttribute('y',(-n.r*.85).toFixed(1)); ex.setAttribute('font-size',(n.r*.5+4).toFixed(1));
     const nu=n.el.querySelector('.num'); nu.setAttribute('y',(n.r+5).toFixed(1)); nu.setAttribute('font-size','10');
+    const tb=n.el.querySelector('.dtag-bg'), tt=n.el.querySelector('.dtag'); const tr=Math.max(7,n.r*.36); tb.setAttribute('r',tr.toFixed(1)); tb.setAttribute('cx',(-n.r*.8).toFixed(1)); tb.setAttribute('cy',(-n.r*.8).toFixed(1)); tt.setAttribute('x',(-n.r*.8).toFixed(1)); tt.setAttribute('y',(-n.r*.8).toFixed(1)); tt.setAttribute('font-size',(tr*1.25).toFixed(1));
     n.line.setAttribute('x2',n.x.toFixed(1)); n.line.setAttribute('y2',n.y.toFixed(1)); n.line.style.opacity=(n.lineOp*n.op).toFixed(2);
     if(n.tOp===0&&n.op<.02){ n.el.remove(); n.line.remove(); nodes.delete(k); }
   }
