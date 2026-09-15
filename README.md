@@ -1,6 +1,8 @@
 # Chords Lifeline
 
-Branch `line`: the map is a horizontal lifeline instead of a circle. Past chords trail off to the left, the chord you're on sits at the focus, the ranked next options fan out to the right with the best one straight ahead, and the view pans along as you play. Click a next option to move; click a past chord to rewind to it.
+Branch `line`: the map is drawn like a transit line instead of a circle. What you played is the black trunk with a station per chord; the chord you are on is the interchange ring with the yellow "you are here" dot; the next options branch off to the right from a shared spine. Straight ahead is the most likely move, the rest fan out by rank; thickness is likelihood in four steps; length is voice-leading distance on a shared ruler, one tick per semitone the voices move. Black branches are in the key, red ones are borrowed chords or secondary dominants. Hover a branch for the reasoning, click it to move there, click a past station to rewind. `?seed=C,Am,F,G7` composes a history at load without audio.
+
+Live: https://maxberko.github.io/chords-lifeline/line/
 
 Live (main branch, radial map): https://maxberko.github.io/chords-lifeline/
 
