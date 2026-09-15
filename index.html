@@ -38,6 +38,9 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .ln .disc{fill:var(--stage);stroke:var(--c);stroke-width:1.6;transition:stroke-width .15s,fill .15s,stroke .15s}
 .ln .lbl{fill:var(--c);font-family:var(--sans);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .ln .ext{fill:var(--white);font-family:var(--serif);font-style:italic;text-anchor:start;dominant-baseline:central;pointer-events:none;opacity:.9}
+.ln .dtag-bg{fill:var(--stage);stroke-width:1.2;stroke:var(--ink-3)} .ln .dtag{fill:var(--ink-2);font-family:var(--mono);font-weight:500;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.ln.d0 .dtag-bg{stroke:#8fd3a3} .ln.d0 .dtag{fill:#8fd3a3} .ln.d1 .dtag-bg{stroke:var(--amber)} .ln.d1 .dtag{fill:var(--amber)} .ln.d3 .dtag{fill:var(--ink-3)}
+.ln-edge.d2{stroke-dasharray:6 4} .ln-edge.d3{stroke-dasharray:2 5}
 .ln .num{fill:var(--ink-2);font-family:var(--mono);text-anchor:middle;dominant-baseline:hanging;pointer-events:none;letter-spacing:.03em}
 .ln.past .lbl{font-family:var(--serif);font-weight:400}
 .ln.past:hover .disc{stroke:var(--amber)}
@@ -69,6 +72,8 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 #optList .n{font:400 22px/1 var(--serif)} #optList .n.major{color:var(--major)} #optList .n.minor{color:var(--minor)}
 #optList .n .ext{font-size:.55em;font-style:italic;margin-left:1px}
 #optList .r{font-size:13px;color:var(--ink-2)} #optList .r b{font:400 11px var(--mono);color:var(--amber);letter-spacing:.04em;margin-right:6px}
+#optList .dist{display:block;font:400 11px var(--mono);letter-spacing:.02em;margin-top:2px}
+.d0{color:#8fd3a3} .d1{color:var(--amber)} .d2{color:var(--ink-2)} .d3{color:var(--ink-3)}
 #optList li.empty{display:block;color:var(--ink-3);font-size:13px;padding:6px;cursor:default}
 #optList li.empty::after{display:none}
 .controls{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
@@ -112,7 +117,7 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
       <g id="world"><g id="edges"></g><g id="nodes"></g></g>
       <g id="center"></g>
     </svg>
-    <div class="hint" id="hint">Play a chord, or click one. The best next option sits straight ahead on the line; the others fan out above and below.</div>
+    <div class="hint" id="hint">Best next option straight ahead, others fan out. The small number is how many semitones the voices move to get there: green is smooth, amber close, dashed lines are far.</div>
   </div>
 
   <aside class="panel">
@@ -264,6 +269,19 @@ function inferKey(hist){
 }
 
 /* ---------- next-chord ranking ---------- */
+/* ---------- proximity: how far the voices move to reach the next chord ---------- */
+const pcDist=(a,b)=>{const d=Math.abs(a-b)%12; return Math.min(d,12-d);};
+function tonesOf(pc,minor,ext){ const t=[pc,(pc+(minor?3:4))%12,(pc+7)%12]; if(ext==='maj7') t.push((pc+11)%12); else if(ext==='7'||ext==='m7'||ext==='ø7') t.push((pc+10)%12); if(ext==='ø7') t[2]=(pc+6)%12; return t; }
+function permutations(a){ if(a.length<=1) return [a]; const out=[]; a.forEach((x,i)=>permutations(a.filter((_,j)=>j!==i)).forEach(p=>out.push([x,...p]))); return out; }
+function distance(from,to){ // from/to: {pc,minor,ext}
+  let A=tonesOf(from.pc,from.minor,from.ext), B=tonesOf(to.pc,to.minor,to.ext);
+  if(A.length!==B.length){ A=A.slice(0,3); B=B.slice(0,3); } // compare like with like: triads when only one side has a 7th
+  let vl=99; for(const p of permutations(B)){ let s=0; for(let i=0;i<A.length;i++) s+=pcDist(A[i],p[i]); if(s<vl) vl=s; }
+  const common=A.filter(x=>B.includes(x)).length;
+  const iv=((to.pc-from.pc)%12+12)%12, p5=(iv*7)%12, fifths=Math.min(p5,12-p5);
+  const cls=vl<=2?0:vl<=4?1:vl<=6?2:3, word=['smooth','close','moderate','far'][cls];
+  return {vl,common,fifths,cls,word};
+}
 function candidates(cur,key){
   const tonic=tonicOf(key), major=key.mode==='major';
   const roles=major?MAJOR_ROLES:MINOR_ROLES, T=tableFor(major), mode=key.mode;
@@ -302,7 +320,8 @@ function candidates(cur,key){
       }
     }
     if(curRole&&curRole.kind==='s'&&r.kind!=='d') score*=.5;
-    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext:roleExt(r,mode),why,name});
+    const ext=roleExt(r,mode);
+    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext,why,name,dist:distance(cur,{pc,minor:r.minor,ext})});
   }
   return out.sort((a,b)=>b.score-a.score);
 }
@@ -365,7 +384,7 @@ const gWorld=S('world'), gEdges=S('edges'), gNodes=S('nodes'), gCenter=S('center
 const nodes=new Map(), edges=new Map(); const cam={x:0,tx:0}; let animReq=null;
 function mkNode(k,x){
   const g=el('g',{class:'ln',tabindex:'0',role:'button'});
-  g.appendChild(el('circle',{class:'halo',r:0})); g.appendChild(el('circle',{class:'disc',r:0})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'}));
+  g.appendChild(el('circle',{class:'halo',r:0})); g.appendChild(el('circle',{class:'disc',r:0})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'})); g.appendChild(el('circle',{class:'dtag-bg',r:0})); g.appendChild(el('text',{class:'dtag'}));
   g.style.opacity='0'; g.setAttribute('transform',`translate(${x.toFixed(1)},${BASE_Y})`); gNodes.appendChild(g);
   const n={key:k,el:g,x,y:BASE_Y,r:16,op:0,halo:0,tx:x,ty:BASE_Y,tr:16,tOp:1,tHalo:0,onclick:null};
   const go=()=>{ if(n.onclick) n.onclick(); };
@@ -373,7 +392,7 @@ function mkNode(k,x){
   nodes.set(k,n); return n;
 }
 function mkEdge(k,a,b){ const l=el('line',{class:'ln-edge'}); gEdges.appendChild(l); const e={key:k,el:l,a,b,op:0,tOp:1}; edges.set(k,e); return e; }
-function labelNode(n,name,ext,num,cls){ n.el.setAttribute('class','ln '+cls); n.el.querySelector('.lbl').textContent=pretty(name); n.el.querySelector('.ext').textContent=ext==='ø7'?'ø7':badge(ext); n.el.querySelector('.num').textContent=num; }
+function labelNode(n,name,ext,num,cls,dist){ n.el.setAttribute('class','ln '+cls+(dist?' d'+dist.cls:'')); n.el.querySelector('.lbl').textContent=pretty(name); n.el.querySelector('.ext').textContent=ext==='ø7'?'ø7':badge(ext); n.el.querySelector('.num').textContent=num; n.el.querySelector('.dtag').textContent=dist?dist.vl:''; n.dtag=!!dist; }
 function rewind(i){ hist.length=i+1; cur={...hist[i]}; activeKey=null; activeExt=''; recompute('clicked'); }
 function renderMap(){
   gCenter.innerHTML='';
@@ -402,16 +421,16 @@ function renderMap(){
     let n=nodes.get(k); if(!n) n=mkNode(k,curNode.tx+FAN_X*.6);
     const lane=rank===0?0:(rank%2?-1:1)*Math.ceil(rank/2);
     n.tx=curNode.tx+FAN_X+Math.abs(lane)*26; n.ty=BASE_Y+lane*FAN_DY; n.tr=14+c.score*12; n.tOp=.45+c.score*.55; n.tHalo=0;
-    labelNode(n,c.name,c.ext,c.num,'cand '+(c.minor?'minor':'major')+(c.score>=.8?' strong':''));
+    labelNode(n,c.name,c.ext,c.num,'cand '+(c.minor?'minor':'major')+(c.score>=.8?' strong':''),c.dist);
     n.el.setAttribute('aria-label',pretty(c.name)+(c.ext?' '+c.ext:'')+', '+c.num+', '+c.why);
     n.onclick=()=>playChord({pc:c.pc,minor:c.minor,ext:c.ext},'clicked');
-    const ek='ec'+k; seenE.add(ek); let e=edges.get(ek); if(!e) e=mkEdge(ek,curNode,n); e.a=curNode; e.b=n; e.tOp=.15+c.score*.7; e.el.setAttribute('class','ln-edge cand'+(rank===0?' best':''));
+    const ek='ec'+k; seenE.add(ek); let e=edges.get(ek); if(!e) e=mkEdge(ek,curNode,n); e.a=curNode; e.b=n; e.tOp=.15+c.score*.7; e.el.setAttribute('class','ln-edge cand d'+c.dist.cls+(rank===0?' best':''));
   });
   for(const [k,n] of nodes) if(!seenN.has(k)) n.tOp=0;
   for(const [k,e] of edges) if(!seenE.has(k)) e.tOp=0;
   cam.tx=FOCUS_X-curNode.tx;
   startAnim();
-  optList.innerHTML=cands.map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}</span></li>`).join('');
+  optList.innerHTML=cands.map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}<em class="dist d${c.dist.cls}" title="minimal voice-leading distance · common tones · circle-of-fifths steps">${c.dist.vl} st · ${c.dist.common} common · ${c.dist.fifths}♯♭</em></span></li>`).join('');
   optList.querySelectorAll('li').forEach(li=>li.addEventListener('click',()=>{ const [pc,mi,ext]=li.dataset.k.split('|'); playChord({pc:+pc,minor:mi==='1',ext},'clicked'); }));
 }
 function startAnim(){ if(animReq) return; let last=performance.now(); const step=now=>{ const dt=Math.min(100,now-last); last=now; const f=1-Math.exp(-dt/130); let busy=false;
@@ -425,6 +444,7 @@ function startAnim(){ if(animReq) return; let last=performance.now(); const step
     n.el.querySelector('.lbl').setAttribute('font-size',(n.r*.62+4).toFixed(1));
     const ex=n.el.querySelector('.ext'); ex.setAttribute('x',(n.r*.75).toFixed(1)); ex.setAttribute('y',(-n.r*.85).toFixed(1)); ex.setAttribute('font-size',(n.r*.45+4).toFixed(1));
     const nu=n.el.querySelector('.num'); nu.setAttribute('y',(n.r+6).toFixed(1)); nu.setAttribute('font-size',n.r>30?'12':'10');
+    const tb=n.el.querySelector('.dtag-bg'), tt=n.el.querySelector('.dtag'); const tr=n.dtag?Math.max(7,n.r*.36):0; tb.setAttribute('r',tr.toFixed(1)); tb.setAttribute('cx',(-n.r*.8).toFixed(1)); tb.setAttribute('cy',(-n.r*.8).toFixed(1)); tt.setAttribute('x',(-n.r*.8).toFixed(1)); tt.setAttribute('y',(-n.r*.8).toFixed(1)); tt.setAttribute('font-size',(tr*1.25).toFixed(1));
     if(n.tOp===0&&n.op<.02){ n.el.remove(); nodes.delete(k); }
   }
   for(const [k,e] of edges){
