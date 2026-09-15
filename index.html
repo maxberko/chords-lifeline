@@ -19,14 +19,7 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .lifeline{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel);overflow:hidden}
 .lifeline h1{font:400 20px/1 var(--serif);margin:0;letter-spacing:.01em;white-space:nowrap}
 .lifeline h1 em{font-style:italic;color:var(--amber)}
-.strip{min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:4px 2px;min-height:46px;align-items:center}
-.strip:empty::before{content:'Your chord history appears here as you play.';color:var(--ink-3);font-size:13px}
-.chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;min-width:44px;padding:4px 8px 3px;border:1px solid var(--line);border-radius:6px;background:var(--stage);animation:pop .25s ease-out}
-.chip .n{font:400 18px/1.05 var(--serif)} .chip .n.major{color:var(--major)} .chip .n.minor{color:var(--minor)}
-.chip .n .ext{font-size:.55em;font-style:italic;margin-left:1px}
-.chip .f{font:400 9.5px var(--mono);color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
-.chip.cur{border-color:var(--amber)}
-@keyframes pop{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+.lead{margin:0;color:var(--ink-3);font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .keybox{display:flex;align-items:center;gap:10px;white-space:nowrap}
 .keybox .k{font:400 20px/1 var(--serif);color:var(--amber)}
 .keybox .k small{font:400 10.5px var(--mono);color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px}
@@ -35,30 +28,26 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .keybox .sl small{font:400 10.5px var(--mono);color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase}
 .keybox button{font:500 12px var(--sans);color:var(--ink-2);background:none;border:1px solid var(--line);border-radius:5px;padding:5px 9px;cursor:pointer}
 .keybox button:hover{color:var(--ink);border-color:var(--line-2)}
-/* map */
-.stage{position:relative;background:radial-gradient(circle at 50% 50%,#1a2030 0%,var(--stage) 45%,#0f131b 100%);min-height:0}
+/* the line */
+.stage{position:relative;background:linear-gradient(180deg,#10151e 0%,var(--stage) 50%,#0f131b 100%);min-height:0}
 .stage svg{position:absolute;inset:0;width:100%;height:100%}
-.ring{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:2 5}
-.ringlbl{font:400 9.5px var(--mono);fill:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
-.rim{font:500 11px var(--mono);fill:var(--ink-3);text-anchor:middle;dominant-baseline:central}
-.rim.tonic{fill:var(--amber)}
-.spoke{stroke:var(--line-2);stroke-width:1;opacity:.6}
-.opt{cursor:pointer}
-.opt.major{--c:var(--major)} .opt.minor{--c:var(--minor)}
-.opt .disc{fill:var(--stage);stroke:var(--c);stroke-width:1.6;transition:stroke-width .15s,fill .15s}
-.opt:hover .disc{stroke-width:2.8;fill:color-mix(in srgb,var(--c) 18%,var(--stage))}
-.opt .lbl{fill:var(--c);font-family:var(--sans);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none}
-.opt .ext{fill:var(--white);font-family:var(--serif);font-style:italic;text-anchor:start;dominant-baseline:central;pointer-events:none;opacity:.9}
-.opt .num{fill:var(--ink-2);font-family:var(--mono);text-anchor:middle;dominant-baseline:hanging;pointer-events:none;letter-spacing:.03em}
-.opt.strong .disc{stroke-width:2.4;fill:color-mix(in srgb,var(--c) 14%,var(--stage))}
-.center .disc{fill:var(--stage);stroke-width:2.5}
-.center.major .disc{stroke:var(--major)} .center.minor .disc{stroke:var(--minor)}
-.center .halo{filter:url(#blur);opacity:.55}
-.center.major .halo{fill:var(--major)} .center.minor .halo{fill:var(--minor)}
-.center .lbl{font-family:var(--serif);font-size:34px;text-anchor:middle;dominant-baseline:central;fill:var(--white)}
-.center .lbl tspan.ext{font-size:15px;font-style:italic;baseline-shift:super}
-.center .num{font:400 11px var(--mono);fill:var(--amber);text-anchor:middle;dominant-baseline:central;letter-spacing:.06em}
-.center .empty{font:italic 400 15px var(--serif);fill:var(--ink-3);text-anchor:middle;dominant-baseline:central}
+.axis{stroke:var(--line);stroke-width:1;stroke-dasharray:2 7}
+.axislbl{font:500 10.5px var(--mono);fill:var(--ink-3);letter-spacing:.12em;text-transform:uppercase}
+.ln{cursor:pointer} .ln.major{--c:var(--major)} .ln.minor{--c:var(--minor)}
+.ln .halo{fill:var(--c);filter:url(#blur)}
+.ln .disc{fill:var(--stage);stroke:var(--c);stroke-width:1.6;transition:stroke-width .15s,fill .15s,stroke .15s}
+.ln .lbl{fill:var(--c);font-family:var(--sans);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.ln .ext{fill:var(--white);font-family:var(--serif);font-style:italic;text-anchor:start;dominant-baseline:central;pointer-events:none;opacity:.9}
+.ln .num{fill:var(--ink-2);font-family:var(--mono);text-anchor:middle;dominant-baseline:hanging;pointer-events:none;letter-spacing:.03em}
+.ln.past .lbl{font-family:var(--serif);font-weight:400}
+.ln.past:hover .disc{stroke:var(--amber)}
+.ln.cur{cursor:default} .ln.cur .disc{stroke-width:2.6} .ln.cur .lbl{fill:var(--white);font-family:var(--serif);font-weight:400} .ln.cur .num{fill:var(--amber)}
+.ln.cand:hover .disc{stroke-width:2.8;fill:color-mix(in srgb,var(--c) 18%,var(--stage))}
+.ln.strong .disc{stroke-width:2.4;fill:color-mix(in srgb,var(--c) 14%,var(--stage))}
+.ln-edge{stroke:var(--line-2);stroke-width:1.2}
+.ln-edge.past{stroke:var(--ink-3);stroke-width:2.2}
+.ln-edge.best{stroke:var(--white);stroke-width:1.8}
+.center .empty{font:italic 400 17px var(--serif);fill:var(--ink-3);text-anchor:middle;dominant-baseline:central}
 .hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:var(--ink-3);font-size:12px;pointer-events:none}
 /* panel */
 .panel{background:var(--panel);border-left:1px solid var(--line);padding:18px 20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
@@ -105,7 +94,7 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
 <div class="app">
   <header class="lifeline">
     <h1>Chords <em>Lifeline</em></h1>
-    <div class="strip" id="strip"></div>
+    <p class="lead">Past on the left, next options on the right. Play or click to move along the line; click a past chord to rewind.</p>
     <div class="keybox">
       <div class="k"><small>Key</small><span id="keyName">—</span></div>
       <select id="keySel" aria-label="Key override"><option value="auto">Auto</option></select>
@@ -115,15 +104,15 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
   </header>
 
   <div class="stage">
-    <svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Radial map of next chord options">
+    <svg viewBox="0 0 1400 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Lifeline of chords played, with next options fanning out to the right">
       <defs><filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="14"/></filter></defs>
-      <g id="rings"></g>
-      <g id="rim"></g>
-      <g id="spokes"></g>
-      <g id="opts"></g>
+      <line class="axis" x1="0" y1="400" x2="1400" y2="400"/>
+      <text class="axislbl" x="24" y="380">◀ past</text>
+      <text class="axislbl" x="1376" y="380" text-anchor="end">next ▶</text>
+      <g id="world"><g id="edges"></g><g id="nodes"></g></g>
       <g id="center"></g>
     </svg>
-    <div class="hint" id="hint">Play a chord, or click one on the map. Closer to the centre = more likely next.</div>
+    <div class="hint" id="hint">Play a chord, or click one. The best next option sits straight ahead on the line; the others fan out above and below.</div>
   </div>
 
   <aside class="panel">
@@ -348,21 +337,17 @@ function currentKey(){
   return null;
 }
 function playChord(ch,how){ // a new chord family: push to the lifeline and recompute
-  if(cur&&cur.pc===ch.pc&&cur.minor===ch.minor){ cur.ext=ch.ext||''; if(hist.length) hist[hist.length-1].ext=cur.ext; renderCurrent(how); renderStrip(); return; }
+  if(cur&&cur.pc===ch.pc&&cur.minor===ch.minor){ cur.ext=ch.ext||''; if(hist.length) hist[hist.length-1].ext=cur.ext; renderCurrent(how); renderMap(); return; }
   cur={pc:ch.pc,minor:ch.minor,ext:ch.ext||''}; hist.push({...cur}); if(hist.length>64) hist.shift();
   recompute(how);
 }
 function recompute(how){
   key=currentKey();
   keyName.textContent=key?keyLabel(key):'—';
-  renderStrip(); renderCurrent(how); renderMap();
+  renderCurrent(how); renderMap();
 }
 function nameOf(ch){ const r=key?roleOf(ch,key):null; return spell(ch.pc,key?key.root:ch.pc,r&&r.flat)+(ch.minor?'m':''); }
 function nameHtml(ch){ return pretty(nameOf(ch))+(ch.ext?'<span class="ext">'+badge(ch.ext)+'</span>':''); }
-function renderStrip(){
-  strip.innerHTML=hist.slice(-24).map((ch,i,arr)=>{ const r=key?roleOf(ch,key):null; return `<div class="chip${i===arr.length-1?' cur':''}"><span class="n ${ch.minor?'minor':'major'}">${nameHtml(ch)}</span><span class="f">${r?r.num:'·'}</span></div>`; }).join('');
-  strip.scrollLeft=strip.scrollWidth;
-}
 function renderCurrent(how){
   if(!cur){ chordName.textContent='—'; chordName.className='chord none'; chordRole.textContent='Waiting for a chord'; sevList.className='list none'; sevList.textContent="Depends on the chord's role in the key."; return; }
   const r=roleOf(cur,key);
@@ -373,68 +358,79 @@ function renderCurrent(how){
   else { sevList.className='list none'; sevList.textContent='This chord sits outside the key. Treat it as a new tonic, or set the key by hand.'; }
 }
 
-/* ---------- radial map ---------- */
-const NS='http://www.w3.org/2000/svg', CX=400, CY=400;
+/* ---------- the line: history to the left, options fanning to the right, camera follows ---------- */
+const NS='http://www.w3.org/2000/svg', W=1400, BASE_Y=400, STEP=170, FAN_X=250, FAN_DY=64, FOCUS_X=520, SHOW_PAST=10;
 const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
-const gRings=S('rings'), gRim=S('rim'), gSpokes=S('spokes'), gOpts=S('opts'), gCenter=S('center');
-[[120,'likely'],[220,'possible'],[320,'colour']].forEach(([r,l])=>{ gRings.appendChild(el('circle',{class:'ring',cx:CX,cy:CY,r})); const t=el('text',{class:'ringlbl',x:CX+6,y:CY-r-5}); t.textContent=l; gRings.appendChild(t); });
-const angleOf=(pc,minor,tonic)=>{ const iv=((pc-tonic)%12+12)%12, p=(iv*7)%12; return (-90+p*30+(minor?15:0))*Math.PI/180; };
-const nodes=new Map(); let animReq=null;
+const gWorld=S('world'), gEdges=S('edges'), gNodes=S('nodes'), gCenter=S('center');
+const nodes=new Map(), edges=new Map(); const cam={x:0,tx:0}; let animReq=null;
+function mkNode(k,x){
+  const g=el('g',{class:'ln',tabindex:'0',role:'button'});
+  g.appendChild(el('circle',{class:'halo',r:0})); g.appendChild(el('circle',{class:'disc',r:0})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'}));
+  g.style.opacity='0'; g.setAttribute('transform',`translate(${x.toFixed(1)},${BASE_Y})`); gNodes.appendChild(g);
+  const n={key:k,el:g,x,y:BASE_Y,r:16,op:0,halo:0,tx:x,ty:BASE_Y,tr:16,tOp:1,tHalo:0,onclick:null};
+  const go=()=>{ if(n.onclick) n.onclick(); };
+  g.addEventListener('click',go); g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  nodes.set(k,n); return n;
+}
+function mkEdge(k,a,b){ const l=el('line',{class:'ln-edge'}); gEdges.appendChild(l); const e={key:k,el:l,a,b,op:0,tOp:1}; edges.set(k,e); return e; }
+function labelNode(n,name,ext,num,cls){ n.el.setAttribute('class','ln '+cls); n.el.querySelector('.lbl').textContent=pretty(name); n.el.querySelector('.ext').textContent=ext==='ø7'?'ø7':badge(ext); n.el.querySelector('.num').textContent=num; }
+function rewind(i){ hist.length=i+1; cur={...hist[i]}; activeKey=null; activeExt=''; recompute('clicked'); }
 function renderMap(){
-  gRim.innerHTML=''; gCenter.innerHTML='';
-  if(!cur||!key){ const t=el('text',{class:'empty',x:CX,y:CY}); t.textContent='play a chord'; gCenter.appendChild(t); for(const n of nodes.values()){n.tOp=0;} startAnim(); return; }
-  const tonic=tonicOf(key);
-  for(let i=0;i<12;i++){ const pc=(tonic+i)%12, a=angleOf(pc,false,tonic); const t=el('text',{class:'rim'+(i===0?' tonic':''),x:(CX+352*Math.cos(a)).toFixed(1),y:(CY+352*Math.sin(a)).toFixed(1)}); t.textContent=pretty(spell(pc,key.root)); gRim.appendChild(t); }
-  // centre
-  const gc=el('g',{class:'center '+(cur.minor?'minor':'major'),transform:`translate(${CX},${CY})`});
-  gc.appendChild(el('circle',{class:'halo',r:70})); gc.appendChild(el('circle',{class:'disc',r:50}));
-  const lbl=el('text',{class:'lbl',y:-4}); lbl.textContent=pretty(nameOf(cur)); if(cur.ext){const ts=el('tspan',{class:'ext'}); ts.textContent=badge(cur.ext); lbl.appendChild(ts);} gc.appendChild(lbl);
-  const r=roleOf(cur,key); const nm=el('text',{class:'num',y:22}); nm.textContent=r?r.num:'?'; gc.appendChild(nm);
-  gCenter.appendChild(gc);
-  // options
-  const cands=candidates(cur,key).filter(c=>c.score>=.18);
-  const seen=new Set();
-  cands.forEach(c=>{
-    const k=ckey(c.pc,c.minor); seen.add(k);
-    const a=angleOf(c.pc,c.minor,tonic), rad=88+(1-c.score)*250;
-    const tx=CX+rad*Math.cos(a), ty=CY+rad*Math.sin(a), tr=15+c.score*13;
+  gCenter.innerHTML='';
+  const seenN=new Set(), seenE=new Set();
+  if(!cur||!key){ const t=el('text',{class:'empty',x:FOCUS_X,y:BASE_Y}); t.textContent='play a chord to start the line'; gCenter.appendChild(t); for(const n of nodes.values()) n.tOp=0; for(const e of edges.values()) e.tOp=0; cam.tx=0; startAnim(); optList.innerHTML='<li class="empty">Ranked by how naturally they follow what you\'ve played.</li>'; return; }
+  // history nodes along the line
+  const start=Math.max(0,hist.length-1-SHOW_PAST); let prev=null;
+  hist.forEach((ch,i)=>{
+    if(i<start) return;
+    const isCur=i===hist.length-1, k='h'+i; seenN.add(k);
     let n=nodes.get(k);
-    if(!n){
-      const g=el('g',{class:'opt',tabindex:'0',role:'button'});
-      const line=el('line',{class:'spoke',x1:CX,y1:CY,x2:tx,y2:ty}); gSpokes.appendChild(line);
-      g.appendChild(el('circle',{class:'disc',r:tr})); g.appendChild(el('text',{class:'lbl'})); g.appendChild(el('text',{class:'ext'})); g.appendChild(el('text',{class:'num'}));
-      gOpts.appendChild(g);
-      n={key:k,el:g,line,x:tx,y:ty,r:tr,op:0,tx,ty,tr,tOp:1};
-      g.setAttribute('transform',`translate(${tx.toFixed(1)},${ty.toFixed(1)})`); g.style.opacity='0';
-      const go=()=>{ playChord({pc:c.pc,minor:c.minor,ext:n.ext},'clicked'); };
-      g.addEventListener('click',go); g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
-      nodes.set(k,n);
-    }
-    n.tx=tx; n.ty=ty; n.tr=tr; n.tOp=.5+c.score*.5; n.ext=c.ext; n.score=c.score;
-    n.el.setAttribute('class','opt '+(c.minor?'minor':'major')+(c.score>=.8?' strong':''));
-    n.el.setAttribute('aria-label',pretty(c.name)+(c.ext?' '+c.ext:'')+', '+c.num+', '+c.why);
-    n.el.querySelector('.lbl').textContent=pretty(c.name);
-    n.el.querySelector('.ext').textContent=c.ext==='ø7'?'ø7':badge(c.ext);
-    n.el.querySelector('.num').textContent=c.num;
-    n.lineOp=.15+c.score*.7;
+    if(!n){ const ck='c'+ckey(ch.pc,ch.minor), c=nodes.get(ck); if(c){ nodes.delete(ck); c.key=k; nodes.set(k,c); n=c; } else n=mkNode(k,i*STEP); }
+    n.tx=i*STEP; n.ty=BASE_Y; n.tr=isCur?36:20; n.tOp=isCur?1:Math.max(.35,.9-(hist.length-1-i)*.07); n.tHalo=isCur?.55:0;
+    const r=roleOf(ch,key);
+    labelNode(n,nameOf(ch),ch.ext,r?r.num:'?',(ch.minor?'minor':'major')+(isCur?' cur':' past'));
+    n.el.setAttribute('aria-label',(isCur?'now: ':'rewind to ')+pretty(nameOf(ch)));
+    n.onclick=isCur?null:()=>rewind(i);
+    if(prev){ const ek='e'+i; seenE.add(ek); let e=edges.get(ek); if(!e) e=mkEdge(ek,prev,n); e.a=prev; e.b=n; e.tOp=.8; e.el.setAttribute('class','ln-edge past'); }
+    prev=n;
   });
-  for(const [k,n] of nodes){ if(!seen.has(k)) n.tOp=0; }
+  const curNode=prev;
+  // next options fan out to the right; the best one continues the line
+  const cands=candidates(cur,key).filter(c=>c.score>=.18).slice(0,9);
+  cands.forEach((c,rank)=>{
+    const k='c'+ckey(c.pc,c.minor); seenN.add(k);
+    let n=nodes.get(k); if(!n) n=mkNode(k,curNode.tx+FAN_X*.6);
+    const lane=rank===0?0:(rank%2?-1:1)*Math.ceil(rank/2);
+    n.tx=curNode.tx+FAN_X+Math.abs(lane)*26; n.ty=BASE_Y+lane*FAN_DY; n.tr=14+c.score*12; n.tOp=.45+c.score*.55; n.tHalo=0;
+    labelNode(n,c.name,c.ext,c.num,'cand '+(c.minor?'minor':'major')+(c.score>=.8?' strong':''));
+    n.el.setAttribute('aria-label',pretty(c.name)+(c.ext?' '+c.ext:'')+', '+c.num+', '+c.why);
+    n.onclick=()=>playChord({pc:c.pc,minor:c.minor,ext:c.ext},'clicked');
+    const ek='ec'+k; seenE.add(ek); let e=edges.get(ek); if(!e) e=mkEdge(ek,curNode,n); e.a=curNode; e.b=n; e.tOp=.15+c.score*.7; e.el.setAttribute('class','ln-edge cand'+(rank===0?' best':''));
+  });
+  for(const [k,n] of nodes) if(!seenN.has(k)) n.tOp=0;
+  for(const [k,e] of edges) if(!seenE.has(k)) e.tOp=0;
+  cam.tx=FOCUS_X-curNode.tx;
   startAnim();
-  // panel list
-  optList.innerHTML=cands.slice(0,9).map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}</span></li>`).join('');
+  optList.innerHTML=cands.map(c=>`<li data-k="${c.pc}|${c.minor?1:0}|${c.ext}" style="--s:${c.score.toFixed(2)}"><span class="n ${c.minor?'minor':'major'}">${pretty(c.name)}${c.ext?'<span class="ext">'+(c.ext==='ø7'?'ø7':badge(c.ext))+'</span>':''}</span><span class="r"><b>${c.num}</b>${c.why}</span></li>`).join('');
   optList.querySelectorAll('li').forEach(li=>li.addEventListener('click',()=>{ const [pc,mi,ext]=li.dataset.k.split('|'); playChord({pc:+pc,minor:mi==='1',ext},'clicked'); }));
 }
-function startAnim(){ if(animReq) return; let last=performance.now(); const step=now=>{ const dt=Math.min(100,now-last); last=now; const f=1-Math.exp(-dt/110); let busy=false;
+function startAnim(){ if(animReq) return; let last=performance.now(); const step=now=>{ const dt=Math.min(100,now-last); last=now; const f=1-Math.exp(-dt/130); let busy=false;
+  cam.x+=(cam.tx-cam.x)*f; if(Math.abs(cam.tx-cam.x)>.3) busy=true; gWorld.setAttribute('transform',`translate(${cam.x.toFixed(1)},0)`);
   for(const [k,n] of nodes){
-    n.x+=(n.tx-n.x)*f; n.y+=(n.ty-n.y)*f; n.r+=(n.tr-n.r)*f; n.op+=(n.tOp-n.op)*f;
+    n.x+=(n.tx-n.x)*f; n.y+=(n.ty-n.y)*f; n.r+=(n.tr-n.r)*f; n.op+=(n.tOp-n.op)*f; n.halo+=(n.tHalo-n.halo)*f;
     if(Math.abs(n.tx-n.x)>.3||Math.abs(n.ty-n.y)>.3||Math.abs(n.tOp-n.op)>.01||Math.abs(n.tr-n.r)>.2) busy=true;
     n.el.setAttribute('transform',`translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`); n.el.style.opacity=n.op.toFixed(3);
     n.el.querySelector('.disc').setAttribute('r',n.r.toFixed(1));
+    const h=n.el.querySelector('.halo'); h.setAttribute('r',(n.r*1.9).toFixed(1)); h.style.opacity=n.halo.toFixed(3);
     n.el.querySelector('.lbl').setAttribute('font-size',(n.r*.62+4).toFixed(1));
-    const ex=n.el.querySelector('.ext'); ex.setAttribute('x',(n.r*.75).toFixed(1)); ex.setAttribute('y',(-n.r*.85).toFixed(1)); ex.setAttribute('font-size',(n.r*.5+4).toFixed(1));
-    const nu=n.el.querySelector('.num'); nu.setAttribute('y',(n.r+5).toFixed(1)); nu.setAttribute('font-size','10');
-    n.line.setAttribute('x2',n.x.toFixed(1)); n.line.setAttribute('y2',n.y.toFixed(1)); n.line.style.opacity=(n.lineOp*n.op).toFixed(2);
-    if(n.tOp===0&&n.op<.02){ n.el.remove(); n.line.remove(); nodes.delete(k); }
+    const ex=n.el.querySelector('.ext'); ex.setAttribute('x',(n.r*.75).toFixed(1)); ex.setAttribute('y',(-n.r*.85).toFixed(1)); ex.setAttribute('font-size',(n.r*.45+4).toFixed(1));
+    const nu=n.el.querySelector('.num'); nu.setAttribute('y',(n.r+6).toFixed(1)); nu.setAttribute('font-size',n.r>30?'12':'10');
+    if(n.tOp===0&&n.op<.02){ n.el.remove(); nodes.delete(k); }
+  }
+  for(const [k,e] of edges){
+    e.op+=(e.tOp-e.op)*f; if(Math.abs(e.tOp-e.op)>.01) busy=true;
+    e.el.setAttribute('x1',e.a.x.toFixed(1)); e.el.setAttribute('y1',e.a.y.toFixed(1)); e.el.setAttribute('x2',e.b.x.toFixed(1)); e.el.setAttribute('y2',e.b.y.toFixed(1)); e.el.style.opacity=e.op.toFixed(3);
+    if(e.tOp===0&&e.op<.02){ e.el.remove(); edges.delete(k); }
   }
   if(busy) animReq=requestAnimationFrame(step); else animReq=null; }; animReq=requestAnimationFrame(step); }
 

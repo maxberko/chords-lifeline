@@ -1,6 +1,8 @@
 # Chords Lifeline
 
-Live: https://maxberko.github.io/chords-lifeline/
+Branch `line`: the map is a horizontal lifeline instead of a circle. Past chords trail off to the left, the chord you're on sits at the focus, the ranked next options fan out to the right with the best one straight ahead, and the view pans along as you play. Click a next option to move; click a past chord to rewind to it.
+
+Live (main branch, radial map): https://maxberko.github.io/chords-lifeline/
 
 A composing aid. Play chords on piano or guitar; the app keeps the history of what you played (the lifeline), infers the key from it, and draws a radial map of where you can go next. Closer to the centre means more likely. Each option carries the 7th flavour it takes in that key (Fmaj7, G7, Am7), and the current chord shows which 7ths fit it.
 
