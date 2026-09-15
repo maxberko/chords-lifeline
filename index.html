@@ -16,10 +16,10 @@ html,body{height:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;overflow:hidden}
 .app{display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto minmax(0,1fr);height:100vh;height:100dvh}
 /* lifeline strip */
-.lifeline{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.lifeline{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel);overflow:hidden}
 .lifeline h1{font:400 20px/1 var(--serif);margin:0;letter-spacing:.01em;white-space:nowrap}
 .lifeline h1 em{font-style:italic;color:var(--amber)}
-.strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:4px 2px;min-height:46px;align-items:center}
+.strip{min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:4px 2px;min-height:46px;align-items:center}
 .strip:empty::before{content:'Your chord history appears here as you play.';color:var(--ink-3);font-size:13px}
 .chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;min-width:44px;padding:4px 8px 3px;border:1px solid var(--line);border-radius:6px;background:var(--stage);animation:pop .25s ease-out}
 .chip .n{font:400 18px/1.05 var(--serif)} .chip .n.major{color:var(--major)} .chip .n.minor{color:var(--minor)}
@@ -80,7 +80,8 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 #optList .n{font:400 22px/1 var(--serif)} #optList .n.major{color:var(--major)} #optList .n.minor{color:var(--minor)}
 #optList .n .ext{font-size:.55em;font-style:italic;margin-left:1px}
 #optList .r{font-size:13px;color:var(--ink-2)} #optList .r b{font:400 11px var(--mono);color:var(--amber);letter-spacing:.04em;margin-right:6px}
-#optList .empty{color:var(--ink-3);font-size:13px;padding:6px}
+#optList li.empty{display:block;color:var(--ink-3);font-size:13px;padding:6px;cursor:default}
+#optList li.empty::after{display:none}
 .controls{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
 button#micBtn{font:600 14px var(--sans);color:#0f1319;background:var(--ink);border:0;border-radius:6px;padding:11px 14px;cursor:pointer}
 button#micBtn:hover{background:#fff} button#micBtn:focus-visible{outline:2px solid var(--minor);outline-offset:2px}
