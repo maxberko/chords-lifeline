@@ -31,6 +31,8 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .keybox .k{font:400 20px/1 var(--serif);color:var(--amber)}
 .keybox .k small{font:400 10.5px var(--mono);color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px}
 .keybox select{font:500 13px var(--sans);color:var(--ink);background:var(--stage);border:1px solid var(--line);border-radius:5px;padding:5px 8px}
+.keybox .sl{display:flex;flex-direction:column;gap:2px}
+.keybox .sl small{font:400 10.5px var(--mono);color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase}
 .keybox button{font:500 12px var(--sans);color:var(--ink-2);background:none;border:1px solid var(--line);border-radius:5px;padding:5px 9px;cursor:pointer}
 .keybox button:hover{color:var(--ink);border-color:var(--line-2)}
 /* map */
@@ -106,6 +108,7 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
     <div class="keybox">
       <div class="k"><small>Key</small><span id="keyName">—</span></div>
       <select id="keySel" aria-label="Key override"><option value="auto">Auto</option></select>
+      <label class="sl"><small>Style</small><select id="styleSel" aria-label="Harmonic style"><option value="neutral">Neutral</option><option value="pop">Pop</option><option value="jazz">Jazz</option></select></label>
       <button type="button" id="clearBtn">Clear history</button>
     </div>
   </header>
@@ -214,6 +217,31 @@ const T_MIN={
 };
 const DEFAULT_T_MAJ={I:.5,IV:.45,V:.5,vi:.4,ii:.35};
 const DEFAULT_T_MIN={i:.5,iv:.4,V:.45,VI:.4,VII:.35};
+/* ---------- styles: each one overrides the transition tables, the base scores of colour chords, and the 7th habits ---------- */
+const STYLES={
+  neutral:{label:'Neutral',T_MAJ:null,T_MIN:null,base:{},ext:{},adv:{}},
+  pop:{label:'Pop',
+    T_MAJ:{I:{IV:.95,V:.95,vi:.9,ii:.5,iii:.3},ii:{V:.8,IV:.55,I:.5,vi:.5,iii:.2},iii:{vi:.8,IV:.7,I:.4,V:.35,ii:.3},IV:{I:.9,V:.9,vi:.6,ii:.45,iii:.25},V:{I:1,vi:.85,IV:.7,ii:.3,iii:.25},vi:{IV:.95,V:.8,I:.6,ii:.55,iii:.3},
+           iv:{I:.85,V:.5,vi:.4},'♭VI':{'♭VII':.7,V:.5,I:.5,IV:.4},'♭VII':{I:.9,IV:.6,'♭VI':.4},'♭III':{'♭VII':.5,IV:.5,I:.4},'♭II':{I:.8,V:.4},i:{'♭VI':.5,'♭III':.5,IV:.4,V:.4},v:{IV:.6,I:.5,'♭VII':.5}},
+    T_MIN:{i:{VI:.95,VII:.9,iv:.8,III:.7,V:.55,v:.5,ii:.25},ii:{V:.7,i:.5,VI:.4,v:.3},III:{VII:.8,VI:.7,iv:.6,i:.6,V:.3},iv:{i:.8,VI:.7,VII:.6,V:.6,III:.4,v:.3},v:{VI:.6,i:.7,iv:.5,VII:.5,V:.3},V:{i:1,VI:.7,iv:.4,III:.3},VI:{VII:.9,III:.7,iv:.6,i:.6,V:.5,ii:.2},VII:{i:.9,III:.7,VI:.6,V:.4,iv:.4},I:{iv:.5,VI:.4,V:.3,i:.3},IV:{i:.6,VII:.5,V:.4},'♭II':{V:.7,i:.5}},
+    base:{major:{'V/V':.3,'V/vi':.3,'V/ii':.2,'V/iii':.1,iv:.4,'♭VI':.45,'♭VII':.6,'♭III':.35,i:.3,'♭II':.08,v:.3},minor:{I:.3,IV:.4,'V/V':.2,'♭II':.08}},
+    ext:{major:{I:'',IV:'',V:'',vi:'m7',iii:''},minor:{i:'',VI:'',VII:'',III:'',iv:''}},
+    adv:{major:{I:['(plain)','add9','sus2'],IV:['(plain)','add9','maj7'],V:['(plain)','sus4','7'],vi:['m7','(plain)','add9'],ii:['m7','(plain)'],iii:['m7','(plain)']},minor:{i:['(plain)','m7','add9'],VI:['(plain)','maj7'],VII:['(plain)','sus4'],III:['(plain)','add9'],iv:['(plain)','m7'],V:['7','(plain)']}}},
+  jazz:{label:'Jazz',
+    T_MAJ:{I:{ii:.85,vi:.8,IV:.65,iii:.6,V:.55},ii:{V:1,iii:.3,vi:.3,I:.3,IV:.25},iii:{vi:.95,ii:.5,IV:.45,V:.35,I:.3},IV:{iii:.65,ii:.6,V:.65,I:.65,vi:.4},V:{I:1,iii:.6,vi:.6,ii:.35,IV:.3},vi:{ii:.95,V:.5,IV:.45,iii:.4,I:.4},
+           iv:{I:.8,V:.5,iii:.4,vi:.4},'♭VI':{V:.7,I:.5,'♭VII':.4,ii:.4},'♭VII':{I:.85,IV:.4,vi:.4},'♭III':{'♭VI':.6,ii:.5,I:.4},'♭II':{I:.95,V:.3},i:{IV:.4,V:.5,'♭VI':.5,'♭III':.5},v:{I:.6,IV:.5,ii:.4}},
+    T_MIN:{i:{ii:.85,iv:.7,V:.75,VI:.6,VII:.45,III:.5,v:.4},ii:{V:1,i:.4,VI:.3,v:.3},III:{VI:.7,ii:.6,iv:.5,i:.5,V:.4},iv:{V:.85,ii:.6,i:.7,VII:.5,VI:.5,III:.4},v:{i:.7,iv:.5,VI:.5,V:.4,VII:.4},V:{i:1,VI:.6,ii:.4,III:.35,iv:.35},VI:{ii:.75,V:.7,VII:.6,III:.6,i:.5,iv:.5},VII:{III:.8,i:.6,VI:.5,V:.5,ii:.4},I:{iv:.5,ii:.5,VI:.4,i:.3},IV:{i:.6,V:.5,VII:.4},'♭II':{V:.9,i:.6}},
+    base:{major:{'V/V':.6,'V/vi':.55,'V/ii':.6,'V/iii':.4,iv:.45,'♭VI':.45,'♭VII':.45,'♭III':.4,i:.35,'♭II':.6,v:.35},minor:{I:.35,IV:.45,'V/V':.5,'♭II':.45}},
+    ext:{major:{'♭VII':'7',iv:'m7'},minor:{}},
+    adv:{major:{I:['maj7','6/9','maj9'],ii:['m7','m9','m11'],iii:['m7'],IV:['maj7','maj9','maj7♯11'],V:['7','9','13','7♭9','7alt'],vi:['m7','m9'],'♭VII':['7  backdoor → I'],'♭II':['7  tritone sub'],iv:['m7','m6']},minor:{i:['m7','m6','mMaj7','m9'],ii:['m7♭5','m11♭5'],V:['7♭9','7alt','7'],iv:['m7','m9'],VI:['maj7','maj9'],VII:['7','9'],III:['maj7']}}},
+};
+let styleName='neutral';
+try{ if(STYLES[localStorage.getItem('lifeline-style')]) styleName=localStorage.getItem('lifeline-style'); }catch(e){}
+const style=()=>STYLES[styleName];
+const tableFor=major=>{const st=style(); return major?(st.T_MAJ||T_MAJ):(st.T_MIN||T_MIN);};
+const roleBase=(r,mode)=>{const b=style().base[mode]; return (b&&b[r.num]!==undefined)?b[r.num]:r.base;};
+const roleExt=(r,mode)=>{const e=style().ext[mode]; return (e&&e[r.num]!==undefined)?e[r.num]:r.ext;};
+const roleAdv=(r,mode)=>{const a=style().adv[mode]; return (a&&a[r.num])||r.adv;};
 const MOVE_WORD={'V→I':'authentic cadence','V→vi':'deceptive cadence','IV→I':'plagal cadence','ii→V':'ii–V','I→IV':'to the subdominant','I→V':'to the dominant','iv→I':'minor plagal','I→vi':'to the relative minor','V→i':'cadence','iv→V':'to the dominant','VII→III':'to the relative major','VI→VII':'♭VI–♭VII climb','i→VI':'to the submediant'};
 
 function tonicOf(key){ return key.mode==='major'?key.root:(key.root+9)%12; }
@@ -248,7 +276,7 @@ function inferKey(hist){
 /* ---------- next-chord ranking ---------- */
 function candidates(cur,key){
   const tonic=tonicOf(key), major=key.mode==='major';
-  const roles=major?MAJOR_ROLES:MINOR_ROLES, T=major?T_MAJ:T_MIN;
+  const roles=major?MAJOR_ROLES:MINOR_ROLES, T=tableFor(major), mode=key.mode;
   const curRole=roleOf(cur,key), curNum=curRole?curRole.num:null;
   const trans=(curNum&&T[curNum])||(major?DEFAULT_T_MAJ:DEFAULT_T_MIN);
   const parallelName=pretty(spell(tonic,major?(tonic+3)%12:tonic,major)); // C minor / A major
@@ -264,13 +292,13 @@ function candidates(cur,key){
       else why=r.num+' of the key';
     } else if(r.kind==='s'){
       const tgt=roles.find(x=>x.kind==='d'&&x.iv===r.target&&x.num!=='v');
-      score=r.base*(curNum&&trans[tgt.num]>=.8?1.3:1);
+      score=roleBase(r,mode)*(curNum&&trans[tgt.num]>=.8?1.3:1);
       if(curRole&&curRole.kind==='s') score*=.6;
       why='V7 of '+pretty(spell((tonic+r.target)%12,key.root)+(tgt.minor?'m':''));
     } else if(r.kind==='p'){
-      score=r.base*(curNum===(major?'I':'i')?1:.6); why='parallel '+(major?'minor':'major');
+      score=roleBase(r,mode)*(curNum===(major?'I':'i')?1:.6); why='parallel '+(major?'minor':'major');
     } else {
-      score=r.base;
+      score=roleBase(r,mode);
       if(major){
         if(r.num==='iv'&&curNum==='IV') score*=1.4;
         if(r.num==='♭VI'&&curNum==='V') score*=1.3;
@@ -284,14 +312,14 @@ function candidates(cur,key){
       }
     }
     if(curRole&&curRole.kind==='s'&&r.kind!=='d') score*=.5;
-    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext:r.ext,why,name});
+    out.push({pc,minor:r.minor,score:Math.min(1,score),num:r.num,ext:roleExt(r,mode),why,name});
   }
   return out.sort((a,b)=>b.score-a.score);
 }
 function adviceFor(cur,key){
   const r=roleOf(cur,key); if(!r) return null;
   const base=pretty(spell(cur.pc,key.root,r.flat)), tonic=tonicOf(key), roles=key.mode==='major'?MAJOR_ROLES:MINOR_ROLES;
-  return r.adv.map(a=>{
+  return roleAdv(r,key.mode).map(a=>{
     let [suffix,tag='']=a.split(/\s{2,}/); let note='';
     const arrow=suffix.indexOf(' → ');
     if(arrow>0){ const tgtNum=suffix.slice(arrow+3).trim(); suffix=suffix.slice(0,arrow); const tr=roles.find(x=>x.num===tgtNum&&x.kind==='d'); note='→ '+(tr?pretty(spell((tonic+tr.iv)%12,key.root)+(tr.minor?'m':'')):tgtNum); }
@@ -308,6 +336,8 @@ const strip=S('strip'), keyName=S('keyName'), keySel=S('keySel'), chordName=S('c
 for(let i=0;i<12;i++){ const o=document.createElement('option'); o.value='M'+i; o.textContent=pretty(spell(i,i))+' major'; keySel.appendChild(o); }
 for(let i=0;i<12;i++){ const root=(i+3)%12; const o=document.createElement('option'); o.value='m'+root; o.textContent=pretty(spell(i,root,KEYSIGN[root]<0))+' minor'; keySel.appendChild(o); }
 keySel.addEventListener('change',()=>{override=keySel.value; recompute();});
+const styleSel=S('styleSel'); styleSel.value=styleName;
+styleSel.addEventListener('change',()=>{styleName=styleSel.value; try{localStorage.setItem('lifeline-style',styleName);}catch(e){} recompute();});
 S('clearBtn').addEventListener('click',()=>{hist.length=0; prevKey=null; if(cur){hist.push(cur);} recompute();});
 
 function currentKey(){
@@ -385,7 +415,7 @@ function renderMap(){
     n.el.querySelector('.lbl').textContent=pretty(c.name);
     n.el.querySelector('.ext').textContent=c.ext==='ø7'?'ø7':badge(c.ext);
     n.el.querySelector('.num').textContent=c.num;
-    n.line.setAttribute('style',`opacity:${(.15+c.score*.7).toFixed(2)}`);
+    n.lineOp=.15+c.score*.7;
   });
   for(const [k,n] of nodes){ if(!seen.has(k)) n.tOp=0; }
   startAnim();
@@ -402,7 +432,7 @@ function startAnim(){ if(animReq) return; let last=performance.now(); const step
     n.el.querySelector('.lbl').setAttribute('font-size',(n.r*.62+4).toFixed(1));
     const ex=n.el.querySelector('.ext'); ex.setAttribute('x',(n.r*.75).toFixed(1)); ex.setAttribute('y',(-n.r*.85).toFixed(1)); ex.setAttribute('font-size',(n.r*.5+4).toFixed(1));
     const nu=n.el.querySelector('.num'); nu.setAttribute('y',(n.r+5).toFixed(1)); nu.setAttribute('font-size','10');
-    n.line.setAttribute('x2',n.x.toFixed(1)); n.line.setAttribute('y2',n.y.toFixed(1)); n.line.style.opacity=(parseFloat(n.line.getAttribute('style').match(/opacity:([\d.]+)/)[1])*n.op).toFixed(2);
+    n.line.setAttribute('x2',n.x.toFixed(1)); n.line.setAttribute('y2',n.y.toFixed(1)); n.line.style.opacity=(n.lineOp*n.op).toFixed(2);
     if(n.tOp===0&&n.op<.02){ n.el.remove(); n.line.remove(); nodes.delete(k); }
   }
   if(busy) animReq=requestAnimationFrame(step); else animReq=null; }; animReq=requestAnimationFrame(step); }
