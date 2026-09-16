@@ -91,6 +91,7 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 button#micBtn{font:600 14px var(--sans);color:#0f1319;background:var(--ink);border:0;border-radius:6px;padding:11px 14px;cursor:pointer}
 button#micBtn:hover{background:#fff} button#micBtn:focus-visible{outline:2px solid var(--minor);outline-offset:2px}
 button#micBtn.on{background:#2a3444;color:var(--ink)}
+button.demo{font:500 13px var(--sans);color:var(--ink-2);background:none;border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer} button.demo:hover{color:var(--ink);border-color:var(--line-2)} button.demo.on{color:var(--ink);border-color:var(--ink-2)}
 .controls label{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink-2);font-size:13px}
 .controls input[type=range]{width:140px;accent-color:var(--ink-2)}
 .controls input[type=checkbox]{accent-color:var(--ink-2);width:15px;height:15px;margin:0}
@@ -144,6 +145,7 @@ button#micBtn.on{background:#2a3444;color:var(--ink)}
     </section>
     <section class="controls">
       <button id="micBtn" type="button">Start listening</button>
+      <button id="demoBtn" type="button" class="demo" title="Play a looping progression in the current key through the speakers, as if someone were playing">Play a demo loop</button>
       <label>Sensitivity <input type="range" id="sens" min="1" max="100" value="45" aria-label="Microphone sensitivity"></label>
       <label><span>Hear 7ths</span><input type="checkbox" id="sevenths" checked></label>
       <div class="status" id="status">Microphone off · click any chord to compose by hand</div>
@@ -508,18 +510,24 @@ function analyse(){
   if(now-candSince>=need||(fam!==activeKey&&bs-second>.12)){ activeKey=fam; activeExt=best.ext; candidate=null; playChord({pc:best.pc,minor:best.minor,ext:best.ext},'heard'); }
 }
 function setStatus(t,c){statusEl.textContent=t;statusEl.className='status'+(c?' '+c:'');}
-async function start(){
+let demoOn=false;
+const demoBtn=S('demoBtn');
+function demoList(){ // a loop in the current key: I vi IV V7, or i VI III VII in minor
+  const k=key||{root:0,mode:'major'}, t=tonicOf(k), n=pc=>spell(pc,k.root);
+  return k.mode==='major'?[n(t),n((t+9)%12)+'m',n((t+5)%12),n((t+7)%12)+'7']:[n(t)+'m',n((t+8)%12),n((t+3)%12),n((t+10)%12)];
+}
+async function start(list){
   try{
     ctx=new (window.AudioContext||window.webkitAudioContext)();
     analyser=ctx.createAnalyser(); analyser.fftSize=8192; analyser.smoothingTimeConstant=0.45;
     freq=new Float32Array(analyser.frequencyBinCount); time=new Float32Array(analyser.fftSize);
-    const test=new URLSearchParams(location.search).get('test');
-    if(test){ runTest(test.split(',')); }
+    const test=list?list.join(','):new URLSearchParams(location.search).get('test');
+    if(test){ runTest(test.split(',')); demoOn=!!list; }
     else{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}); ctx.createMediaStreamSource(stream).connect(analyser); }
     if(ctx.state==='suspended') await ctx.resume();
     timer=setInterval(analyse,40);
-    micBtn.textContent=test?'Stop test chords':'Stop listening'; micBtn.classList.add('on');
-    setStatus(test?'Playing test chords · '+test.split(',').join(' → '):'Listening · '+Math.round(ctx.sampleRate/1000)+' kHz','live');
+    if(demoOn){ demoBtn.textContent='Stop demo loop'; demoBtn.classList.add('on'); setStatus('Demo loop · '+test.split(',').join(' → '),'live'); }
+    else { micBtn.textContent=test?'Stop test chords':'Stop listening'; micBtn.classList.add('on'); setStatus(test?'Playing test chords · '+test.split(',').join(' → '):'Listening · '+Math.round(ctx.sampleRate/1000)+' kHz','live'); }
   }catch(err){
     const denied=err&&(err.name==='NotAllowedError'||err.name==='SecurityError');
     setStatus(denied?'Microphone blocked here. Allow it in the browser, or open the local index.html file.':'Microphone unavailable: '+(err&&err.message||err),'err');
@@ -531,10 +539,11 @@ function stop(silent){
   if(stream)stream.getTracks().forEach(t=>t.stop()); stream=null;
   testNodes.forEach(o=>{try{o.stop();}catch(e){}}); testNodes=[];
   if(ctx)ctx.close().catch(()=>{}); ctx=null; activeKey=null; activeExt='';
-  micBtn.textContent='Start listening'; micBtn.classList.remove('on');
+  micBtn.textContent='Start listening'; micBtn.classList.remove('on'); demoBtn.textContent='Play a demo loop'; demoBtn.classList.remove('on'); demoOn=false;
   if(!silent) setStatus('Microphone off · click any chord to compose by hand');
 }
-micBtn.addEventListener('click',()=>timer?stop():start());
+micBtn.addEventListener('click',()=>{ if(timer&&!demoOn) stop(); else { if(timer) stop(); start(); } });
+demoBtn.addEventListener('click',()=>{ if(demoOn) stop(); else { if(timer) stop(); start(demoList()); } });
 if(new URLSearchParams(location.search).get('test')){ micBtn.textContent='Play test chords'; setStatus('Test mode · synthetic chords play through your speakers'); }
 
 /* ?test=C,Am7,Fmaj7,G7 plays synthetic chords through the detector, 2.5 s each */
@@ -549,9 +558,9 @@ function runTest(list){
     const root=m[1], q=QUAL.find(x=>(x.ext||(x.minor?'m':''))===(m[2]||''));
     const pc=SHARP.indexOf(root)>=0?SHARP.indexOf(root):FLAT.indexOf(root);
     if(pc<0||!q) return;
-    const oct=[48,60,48,60];
+    const oct=[48,60,48,60], t0=ctx.currentTime+0.18; // a short silence between chords so the detector settles
     q.iv.map((v,k)=>[pc+v,oct[k]]).concat([[pc,60]]).forEach(([p,base])=>{
-      const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=440*Math.pow(2,(base-(base%12)+((p%12))-69)/12); o.connect(gain); o.start(); testNodes.push(o);
+      const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=440*Math.pow(2,(base-(base%12)+((p%12))-69)/12); o.connect(gain); o.start(t0); testNodes.push(o);
     });
   };
   play(); const iv=setInterval(()=>{if(!ctx){clearInterval(iv);return;}play();},2500);
