@@ -1,6 +1,6 @@
 # Chords Lifeline
 
-Branch `line`: the map is drawn like a transit line instead of a circle. What you played is the black trunk with a station per chord; the chord you are on is the interchange ring with the yellow "you are here" dot; the next options branch off to the right from a shared spine. Straight ahead is the most likely move, the rest fan out by rank; thickness is likelihood in four steps; length is voice-leading distance on a shared ruler, one tick per semitone the voices move. Black branches are in the key, red ones are borrowed chords or secondary dominants. Hover a branch for the reasoning, click it to move there, click a past station to rewind. `?seed=C,Am,F,G7` composes a history at load without audio.
+Branch `line`: the map is drawn as a living vine instead of a circle. What you played is the stem, tapering into the past with a seed per chord; the chord you are on is the bloom, breathing; the next options are tendrils that grow out to the right and sway. Thicker tendril means more likely; the buds along a tendril mark each semitone the voices travel, so a short bare tendril is a smooth move and a long budded one is a leap. Green tendrils stay in the key, rust ones are borrowed chords or secondary dominants. Hover a tendril for the reasoning, click it to move there, click a past seed to rewind. Demo plays a looping progression in the current key through the speakers and the detector; `?seed=C,Am,F,G7` composes a history at load without audio.
 
 Live: https://maxberko.github.io/chords-lifeline/line/
 
